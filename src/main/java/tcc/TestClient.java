@@ -69,7 +69,7 @@ public class TestClient {
 					transactionFailed = true;
 
 					// cancel the flight reservation
-					cancelFlightReservation(outputFlight.getUrl());
+					cancelReservation(outputFlight.getUrl());
 
 				} else {
 					HotelReservationDoc outputHotel = responseHotel.readEntity(HotelReservationDoc.class);
@@ -80,8 +80,15 @@ public class TestClient {
 
 			if (!transactionFailed) {
 				// confirm reservation
-				for (int i = 0; i < urlsToConfirm.size(); i++) {
-					while (!confirmReservation(urlsToConfirm.get(i))) { Thread.sleep(1000); }
+				if (!confirmReservation(urlsToConfirm.get(0))) {
+					// rollback all reservations
+					for (int i = 0; i < urlsToConfirm.size(); i++) {
+						cancelReservation(urlsToConfirm.get(i));
+					}
+				} else {
+					for (int i = 1; i < urlsToConfirm.size(); i++) {
+						while (!confirmReservation(urlsToConfirm.get(i))) { Thread.sleep(1000); }
+					}
 				}
 			}
 		} catch (Exception e) {
@@ -96,7 +103,7 @@ public class TestClient {
 		return webTargetHotel.request().accept(MediaType.APPLICATION_XML)
 		.post(Entity.xml(docHotel));
 	}
-	public static void cancelFlightReservation(String url) {
+	public static void cancelReservation(String url) {
 		Response r = ClientBuilder.newClient().target(url).request().accept(MediaType.TEXT_PLAIN).delete();
 		System.out.println("status of delete: " + r.getStatus());
 	}
